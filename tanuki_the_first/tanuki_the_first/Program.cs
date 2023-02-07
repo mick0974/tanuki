@@ -7,6 +7,8 @@ using System.Text;
 using Packets;
 using System.Text.Json;
 using System.Numerics;
+using System.Security.Cryptography;
+using System.Collections.Generic;
 
 namespace Tanuki_the_first
 {
@@ -133,6 +135,73 @@ namespace Tanuki_the_first
             }
         }
 
+        private void sendMessage(byte[] payload)
+        {
+            try
+            {
+                this.stream.Write(payload, 0, payload.Length);
+                Console.WriteLine("Message sent");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sendig message: " + ex.Message);
+            }
+        }
+
+        private (byte[], int) recieveMessage()
+        {
+            try
+            {
+                byte[] recievedMessage = new byte[2048];
+                int bytesRead = stream.Read(recievedMessage, 0, recievedMessage.Length);
+
+                return (recievedMessage, bytesRead);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error recieving message: " + ex.Message);
+                return (null, 0);
+            }
+        }
+
+        private byte[] EncryptPayload(string plainText)
+        {
+            byte[] encrypted;
+            byte[] key_128;
+
+            using (SHA256 mySHA256 = SHA256.Create())
+            {
+                IEnumerable<Byte> middle = mySHA256.ComputeHash(this.key.ToByteArray()).Take(7);
+                key_128 = middle.ToArray();
+                Console.WriteLine("key trunc: " + key_128.ToString());
+            }
+            
+            Console.WriteLine("key length: " + this.key.ToByteArray().Length);
+
+            using (Aes aes = Aes.Create())
+            {
+                aes.KeySize = 1024;
+                // Create an encryptor to perform the stream transform.
+                ICryptoTransform encryptor = aes.CreateEncryptor(key_128, null);
+
+                // Create the streams used for encryption.
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            //Write all data to the stream.
+                            swEncrypt.Write(plainText);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
+            }
+
+            return encrypted;
+        }
+
         public void startCommunication()
         {
             try
@@ -154,8 +223,8 @@ namespace Tanuki_the_first
             {   
                 startCommunication();
 
-                Packets.Request.KeyExchange request = new Packets.Request.KeyExchange() { Operation = "keyExchange" };
-                string request_Json = JsonSerializer.Serialize<Packets.Request.KeyExchange>(request);
+                Packets.Request.StartInteraction request = new Packets.Request.StartInteraction() { Operation = "keyExchange" };
+                string request_Json = JsonSerializer.Serialize<Packets.Request.StartInteraction>(request);
                 byte[] request_byte = Encoding.ASCII.GetBytes(request_Json.ToString());
                 Console.WriteLine("JSON: " + request_Json);
                 
@@ -195,7 +264,18 @@ namespace Tanuki_the_first
         {
             try
             {
-                Console.WriteLine("Connected to server.");
+                Console.WriteLine("Start download.");
+
+                Packets.Request.StartInteraction start = new Packets.Request.StartInteraction() { Operation = "exeDownload" };
+                string startJson = JsonSerializer.Serialize<Packets.Request.StartInteraction>(start);
+                byte[] start_bytes = this.EncryptPayload(startJson);
+                Console.WriteLine($"{startJson} {start_bytes}");
+                /*
+                this.sendMessage(start_bytes);
+                Console.WriteLine("JSON: " + startJson);
+
+
+
 
                 // Receive the binary file and write it to disk
                 byte[] binary_data = new byte[1024];
@@ -211,6 +291,7 @@ namespace Tanuki_the_first
                 // Clean up the connection
                 stream.Close();
                 client.Close();
+                */
             }
             catch (Exception ex)
             {

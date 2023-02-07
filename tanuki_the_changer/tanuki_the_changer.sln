@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tanuki_the_changer", "tanuki_the_changer\tanuki_the_changer.csproj", "{6AE0E022-CA70-41F8-A106-6540674E6BAA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tanuki_the_cypher", "tanuki_the_changer\tanuki_the_cypher.csproj", "{6AE0E022-CA70-41F8-A106-6540674E6BAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
