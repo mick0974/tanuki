@@ -18,19 +18,6 @@ BLOCKS_LENGTH = 16
 IV = b'9\x97\x8fb\xa0\x82\xe1?\xadb\x89\x11,\xcc\xff\t'
 
 
-def gcd(a, b):
-    while b != 0:
-        a, b = b, a % b
-    return a
-
-
-def mod_inverse(a, m):
-    for i in range(1, m):
-        if (a * i) % m == 1:
-            return i
-    return None
-
-
 def generate_key_pair():
     g = 5
 
