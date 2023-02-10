@@ -79,9 +79,9 @@ namespace tanuki_the_cryptor
             catch (Exception e) { return null; }
         }
 
-        static public string AESDecrypt(byte[] content, byte[] key, byte[] iv)
+        static public byte[] AESDecrypt(byte[] content, byte[] key, byte[] iv)
         {
-            string plaintext = null;
+            byte[] plaintext = null;
 
             try
             {
@@ -95,9 +95,10 @@ namespace tanuki_the_cryptor
                     {
                         using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
                         {
-                            using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                            using (MemoryStream ms = new MemoryStream())
                             {
-                                plaintext = srDecrypt.ReadToEnd();
+                                csDecrypt.CopyTo(ms);
+                                plaintext = ms.ToArray();
                             }
                         }
                     }
@@ -105,7 +106,7 @@ namespace tanuki_the_cryptor
 
                 return plaintext;
             }
-            catch (Exception e) { return e.Message + "\n" + key.Length.ToString(); }
+            catch (Exception e) { return null; }
         }
     }
 }

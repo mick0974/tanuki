@@ -62,7 +62,7 @@ def calculate_aes_key(dh_key):
 
 
 def fetch_malware():
-    exe_path = "../tanuki_the_changer/test_file.txt"
+    exe_path = ".\\tanuki_the_server\\test_file.txt"
     with open(exe_path, 'rb') as f:
         binary_data = f.read()
         return binary_data
@@ -98,13 +98,17 @@ def start_server():
             if operation == "keyExchangeGen":
                 print(f"Received request for encrypted communication")
                 dh_prime, g, dh_secret, y = generate_key_pair()
-                response = {"Operation": "keyExchange", "Prime": dh_prime, "Generator": g, "Y_server": y}
+                response = {"Operation": "keyExchange", "Prime": str(dh_prime), "Generator": str(g), "Gx_server": str(y)}
                 print("Sending params for key generation")
                 client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
             elif operation == "keyExchangeAns":
                 print(f"Received params to establish symmetric encryption key")
-                dh_key = calculate_dh_key(int(request["Y_client"]), dh_secret, dh_prime)
+                dh_key = calculate_dh_key(int(request["Gx_client"]), dh_secret, dh_prime)
                 aes_key = calculate_aes_key(dh_key)
+                
+                #print(f"Computed DH key: {dh_key}")
+                print(f"Computed AES key: {aes_key.hex()}")
+            
 
                 cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
                 encryptor = cipher.encryptor()
@@ -126,4 +130,5 @@ def start_server():
 
 
 if __name__ == "__main__":
+    print(IV.hex())
     start_server()

