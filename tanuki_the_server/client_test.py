@@ -1,9 +1,10 @@
+import hashlib
 import json
 import socket
 import random
 
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from pbkdf2 import pbkdf2
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from tanuki_the_server.server import unpad_data
@@ -37,15 +38,14 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     gx = 0
 
     data = b""
-    #while True:
     request = json.loads(s.recv(MAX_BUFFER_SIZE).decode("utf-8"))
 
     operation = request["Operation"]
 
     if operation == "keyExchange":
-        prime = request["Prime"]
-        generator = request["Generator"]
-        y_server = request["Y_server"]
+        prime = int(request["Prime"])
+        generator = int(request["Generator"])
+        y_server = int(request["Gx_server"])
 
         dh_secret = generate_random_num()
 
@@ -53,16 +53,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
         dh_key = pow(int(y_server), dh_secret, mod=prime)
 
-        request = {"Operation": "keyExchangeAns", "Y_client": f"{y_client}"}
+        request = {"Operation": "keyExchangeAns", "Gx_client": f"{y_client}"}
         s.sendall(bytes(json.dumps(request), encoding="utf-8"))
 
         size = int((GEN_KEY_LENGTH + 7) / 8)
-        aes_key = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=int(KEY_LENGTH / 8),
-            salt=SALT,
-            iterations=480000
-        ).derive(dh_key.to_bytes(size, byteorder='big', signed=False))
+        aes_key = pbkdf2(hashlib.sha256, b"".fromhex(hex(dh_key)[2:]), SALT, 480000, 32)
 
         print(f"Key: {dh_key}")
         print(f"AES_key: {aes_key}")
@@ -84,6 +79,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         clear_text = decryptor.update(cipher_text) + decryptor.finalize()
 
         print(unpad_data(clear_text))
+
+
 
 
 
