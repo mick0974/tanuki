@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,6 +49,30 @@ namespace tanuki_the_first
                 int bytesRead = stream.Read(recievedMessage, 0, byte_to_read);
 
                 return (recievedMessage, bytesRead);
+            }
+            catch (Exception ex) { return (null, 0); }
+
+        }
+
+        public (byte[], int) RecvBinary(int byte_to_read)
+        {
+            try
+            {
+                byte[] recievedMessage = new byte[byte_to_read];
+                int readSoFar = 0;
+
+                while (readSoFar < byte_to_read)
+                {
+                    var read = stream.Read(recievedMessage, readSoFar, recievedMessage.Length - readSoFar);
+                    readSoFar += read;
+                    Console.WriteLine("read now: " + read);
+                    Console.WriteLine("readSoFar: " + readSoFar);
+                    if (read == 0)
+                        break;   // connection was broken
+                }
+
+
+                return (recievedMessage, readSoFar);
             }
             catch (Exception ex) { Console.WriteLine("Error sendig or recieving message: " + ex.Message); return (null, 0); }
 

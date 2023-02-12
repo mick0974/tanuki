@@ -30,16 +30,20 @@ namespace tanuki_the_first
 
             return (x, gx, key);   
         }
-        static public byte[] ComputeAESKey(byte[] exchanged_key)
+        static public byte[] ComputeAESKey(string exchanged_key)
         {
             string salt = "000390fcbf6de49e9ae24b040c466156";
             byte[] saltBytes = StringToByteArray(salt);
             byte[] derived;
 
+            if (exchanged_key.Length % 2 != 0)
+                exchanged_key = exchanged_key + "0";
+            byte[] key = StringToByteArray(exchanged_key);
+
             try
             {
                 using (var pbkdf2 = new Rfc2898DeriveBytes(
-                    exchanged_key,
+                    key,
                     saltBytes,
                     480000,
                     HashAlgorithmName.SHA256))
@@ -59,6 +63,7 @@ namespace tanuki_the_first
         private static byte[] StringToByteArray(String hex)
         {
             byte[] bytes;
+            Console.WriteLine("LEN: " + "0AA23980CEA62C081B46EB02F7B1B8EA423F3A5995A413D5B4C59516BE1916DAF51D022153388E87785B7B7E5178DDF1ABF0020D6FFFA0B57CF245FE585CE20D3F3EAB8BD555EEB2E5CD076747415EC876061D3500365C5CDF379AB7280B5E1850492FC45E91DFA0ED9610719F6D21E38B8221E6CA9617D6051EF61A9B615BA1E".Length);
             try
             {
                 int NumberChars = hex.Length;
@@ -89,6 +94,8 @@ namespace tanuki_the_first
                 {
                     aesAlg.Key = key;
                     aesAlg.IV = iv;
+                    aesAlg.Mode = CipherMode.CBC;
+                    aesAlg.Padding = PaddingMode.None;
 
                     ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
                     using (MemoryStream msDecrypt = new MemoryStream(content))

