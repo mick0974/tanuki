@@ -44,6 +44,7 @@
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
@@ -76,6 +77,7 @@
   <ItemGroup>
     <Compile Include="Communication.cs" />
     <Compile Include="Cryptography.cs" />
+    <Compile Include="Exec.cs" />
     <Compile Include="Packets.cs" />
     <Compile Include="Persistence.cs" />
     <Compile Include="Program.cs" />

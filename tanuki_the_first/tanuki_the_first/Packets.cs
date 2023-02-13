@@ -16,6 +16,11 @@ namespace Packets
             public string Gx_client { get; set; }
         }
 
+        public class ExeSend
+        {
+            public string Operation { get; set; }
+        }
+
     }
 
     namespace Reply
@@ -28,7 +33,7 @@ namespace Packets
             public string Gx_server { get; set; }
         }
 
-        public class ExeExchange 
+        public class ExeSend
         {
             public string Operation { get; set; }
             public string Hash { get; set; }

