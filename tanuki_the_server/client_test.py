@@ -62,27 +62,43 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         print(f"Key: {dh_key}")
         print(f"AES_key: {aes_key}")
 
-        cipher_text = b''
         while True:
-            new_data = s.recv(MAX_BUFFER_SIZE)
-            print(new_data)
+            request = {"Operation": "ExeSend"}
+            s.sendall(bytes(json.dumps(request), encoding="utf-8"))
 
-            if not new_data:
+            print("Receiving hash")
+            request = json.loads(s.recv(MAX_BUFFER_SIZE).decode("utf-8"))
+            exe_hash = request["Hash"]
+            data_length = request["DataLength"]
+
+            print("Receiving data")
+            cipher_text = b''
+            while True:
+                new_data = s.recv(MAX_BUFFER_SIZE)
+
+                if not new_data:
+                    break
+
+                cipher_text += new_data
+
+                if len(cipher_text) >= data_length:
+                    break
+
+            print("Decrypting data")
+            cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
+            decryptor = cipher.decryptor()
+
+            clear_text = decryptor.update(cipher_text) + decryptor.finalize()
+
+            clear_data = unpad_data(clear_text)
+            clear_data_hash = hashlib.sha256(clear_data).hexdigest()
+
+            print(f"Original hash: {exe_hash}, hashed data: {clear_data_hash}")
+
+            if exe_hash == clear_data_hash:
+                response = {"Operation": "EndRequest"}
+                s.sendall(bytes(json.dumps(response), encoding="utf-8"))
                 break
-
-            cipher_text += new_data
-
-        print(cipher_text)
-
-        cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
-        decryptor = cipher.decryptor()
-        clear_text = decryptor.update(cipher_text) + decryptor.finalize()
-
-        print(unpad_data(clear_text))
-
-
-
-
-
+    s.close()
 
 print(f"Received {data}")
