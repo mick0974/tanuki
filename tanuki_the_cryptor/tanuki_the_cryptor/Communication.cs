@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
 
 namespace tanuki_the_cryptor
-{   
+{
     public class Communication
     {
         private string server;
-        private int port;   
-        private TcpClient client;
-        private NetworkStream stream;
+        private int port;
+        private TcpClient client = null;
+        private NetworkStream stream = null;
 
         public Communication(string server, int port)
         {
@@ -27,7 +22,7 @@ namespace tanuki_the_cryptor
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
             }
-            catch { }
+            catch (Exception ex){ throw; }
         }
 
         public void SendMessage(byte[] payload)
@@ -36,8 +31,8 @@ namespace tanuki_the_cryptor
             {
                 stream.Write(payload, 0, payload.Length);
             }
-            catch (Exception ex) { }
-            
+            catch (Exception ex) { throw; }
+
         }
 
         public (byte[], int) RecvMessage(int byte_to_read)
@@ -49,14 +44,14 @@ namespace tanuki_the_cryptor
 
                 return (recievedMessage, bytesRead);
             }
-            catch (Exception ex) { return (null, 0); }
+            catch (Exception ex) { throw; }
 
         }
 
         public void Close()
         {
-            stream.Close();
-            client.Close();
+            if(stream != null) stream.Close();
+            if(client != null) client.Close();  
         }
     }
 }

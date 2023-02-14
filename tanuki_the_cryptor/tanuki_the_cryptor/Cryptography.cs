@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Security.Cryptography;
 
 namespace tanuki_the_cryptor
 {
@@ -27,7 +22,7 @@ namespace tanuki_the_cryptor
                 }
                 return encryptedData;
             }
-            catch (CryptographicException e) { return null; }
+            catch (CryptographicException e) { throw; }
         }
 
         public static byte[] RSADecrypt(byte[] payload)
@@ -47,7 +42,7 @@ namespace tanuki_the_cryptor
                 }
                 return encryptedData;
             }
-            catch (CryptographicException e) { return null; }
+            catch (CryptographicException e) { throw; }
         }
 
         static public byte[] AESEncrypt(string content, byte[] key, byte[] iv)
@@ -76,7 +71,7 @@ namespace tanuki_the_cryptor
                 }
                 return encrypted;
             }
-            catch (Exception e) { return null; }
+            catch (Exception e) { throw; }
         }
 
         static public byte[] AESDecrypt(byte[] content, byte[] key, byte[] iv)
@@ -106,7 +101,7 @@ namespace tanuki_the_cryptor
 
                 return plaintext;
             }
-            catch (Exception e) { return null; }
+            catch (Exception e) { throw; }
         }
     }
 }
