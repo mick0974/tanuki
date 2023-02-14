@@ -1,19 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace tanuki_the_first
+namespace tanuki_the_dropper
 {
     public class Communication
     {
         private string server;
         private int port;
-        private TcpClient client;
-        private NetworkStream stream;
+        private TcpClient client = null;
+        private NetworkStream stream = null;
 
         public Communication(string server, int port)
         {
@@ -28,7 +23,7 @@ namespace tanuki_the_first
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
             }
-            catch(Exception ex) { Console.WriteLine("Error opening connection: " + ex.Message); }
+            catch (Exception ex) { Console.WriteLine("Error opening connection: " + ex.Message); throw;}
         }
 
         public void SendMessage(byte[] payload)
@@ -41,16 +36,16 @@ namespace tanuki_the_first
 
         }
 
-        public (byte[], int) RecvMessage(int byte_to_read)
+        public byte[] RecvMessage(int byte_to_read)
         {
             try
             {
                 byte[] recievedMessage = new byte[byte_to_read];
                 int bytesRead = stream.Read(recievedMessage, 0, byte_to_read);
 
-                return (recievedMessage, bytesRead);
+                return TruncateMessage(recievedMessage, bytesRead);
             }
-            catch (Exception ex) { return (null, 0); }
+            catch (Exception ex) { return null; }
 
         }
 
@@ -65,12 +60,9 @@ namespace tanuki_the_first
                 {
                     var read = stream.Read(recievedMessage, readSoFar, recievedMessage.Length - readSoFar);
                     readSoFar += read;
-                    Console.WriteLine("read now: " + read);
-                    Console.WriteLine("readSoFar: " + readSoFar);
                     if (read == 0)
                         break;   // connection was broken
                 }
-
 
                 return (recievedMessage, readSoFar);
             }
@@ -78,10 +70,18 @@ namespace tanuki_the_first
 
         }
 
+        private byte[] TruncateMessage(byte[] fullArray, int bytesRead)
+        {
+            byte[] truncatedArray = new byte[bytesRead];
+            Array.Copy(fullArray, truncatedArray, bytesRead);
+
+            return truncatedArray;
+        }
+
         public void Close()
         {
-            stream.Close();
-            client.Close();
+            if(stream != null) stream.Close();
+            if(client != null) client.Close();  
         }
     }
 }
