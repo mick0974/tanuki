@@ -42,9 +42,10 @@ namespace tanuki_the_dropper
                         {
                             Console.WriteLine("Failed to copy: " + ex.Message);
                         }
+
+                        EditRegister(copy);
                     }
-                    
-                    EditRegister(copy);
+
                     i++;
                 }
             }
