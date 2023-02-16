@@ -1,12 +1,11 @@
 import hashlib
 import json
-import socket
 import random
+import socket
 
-from cryptography.hazmat.primitives import hashes
-from pbkdf2 import pbkdf2
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+from pbkdf2 import pbkdf2
 from tanuki_the_server.server import unpad_data
 
 HOST = "127.0.0.1"
@@ -91,7 +90,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             clear_text = decryptor.update(cipher_text) + decryptor.finalize()
 
             clear_data = unpad_data(clear_text)
-            clear_data_hash = hashlib.sha256(clear_data).hexdigest()
+            clear_data_hash = hashlib.sha256(clear_text).hexdigest()
 
             print(f"Original hash: {exe_hash}, hashed data: {clear_data_hash}")
 

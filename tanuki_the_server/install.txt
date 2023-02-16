@@ -1,0 +1,12 @@
+cffi==1.15.1
+colorama==0.4.6
+cryptography==39.0.1
+mpmath==1.2.1
+primePy==1.3
+pyasn1==0.4.8
+pycparser==2.21
+pyparsing==3.0.9
+rsa==4.9
+setuptools==58.1.0
+sympy==1.11.1
+tqdm==4.64.1
