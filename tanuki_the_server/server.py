@@ -11,7 +11,7 @@ from sympy import *
 
 import pbkdf2
 
-HOST = '127.0.0.1'  # Symbolic name, meaning all available interfaces
+HOST = '10.0.2.5'  # Symbolic name, meaning all available interfaces
 PORT = 65432  # Arbitrary non-privileged port
 MAX_BUFFER_SIZE = 4096
 DH_KEY_LENGTH = 1024
@@ -81,7 +81,7 @@ def prepare_malware_data(aes_key):
     cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
     encryptor = cipher.encryptor()
 
-    hash_original_text = hashlib.sha256(padded_data).hexdigest()
+    hash_original_text = hashlib.sha256(original_data).hexdigest()
     
     cipher_text = encryptor.update(padded_data) + encryptor.finalize()
     
@@ -90,6 +90,7 @@ def prepare_malware_data(aes_key):
     response = {"Operation": "exeHash", "Hash": hash_original_text, "DataLength": len(cipher_text)}
     response_bytes = bytes(json.dumps(response), encoding="utf-8")
 
+    encryptor = cipher.encryptor()
     encrypted_metadata = encryptor.update(pad_data(response_bytes)) + encryptor.finalize()
 
     return split_data, encrypted_metadata
