@@ -81,10 +81,10 @@ def prepare_malware_data(aes_key):
     cipher = Cipher(algorithms.AES(aes_key), modes.CBC(IV))
     encryptor = cipher.encryptor()
 
-    hash_original_text = hashlib.sha256(original_data).hexdigest()
-
+    hash_original_text = hashlib.sha256(padded_data).hexdigest()
+    
     cipher_text = encryptor.update(padded_data) + encryptor.finalize()
-
+    
     split_data = split_data_for_buffer(cipher_text, MAX_BUFFER_SIZE)
 
     return split_data, hash_original_text, len(cipher_text)

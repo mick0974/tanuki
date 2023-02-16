@@ -1,12 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Numerics;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
-namespace tanuki_the_first
+namespace tanuki_the_dropper
 {
     public static class Cryptography
     {
@@ -28,7 +26,7 @@ namespace tanuki_the_first
             BigInteger gx = BigInteger.ModPow(generator, x, prime);
             BigInteger key = BigInteger.ModPow(gx_server, x, prime);
 
-            return (x, gx, key);   
+            return (x, gx, key);
         }
         static public byte[] ComputeAESKey(string exchanged_key)
         {
@@ -36,6 +34,7 @@ namespace tanuki_the_first
             byte[] saltBytes = StringToByteArray(salt);
             byte[] derived;
 
+            exchanged_key = exchanged_key.TrimStart('0');
             if (exchanged_key.Length % 2 != 0)
                 exchanged_key = exchanged_key + "0";
             byte[] key = StringToByteArray(exchanged_key);
@@ -53,32 +52,9 @@ namespace tanuki_the_first
 
                 return derived;
             }
-            catch(Exception ex)
-            {
-                Console.WriteLine("compute aes: " + ex.Message);
-                return null;
-            }
-        }
-
-        private static byte[] StringToByteArray(String hex)
-        {
-            byte[] bytes;
-            Console.WriteLine("LEN: " + "0AA23980CEA62C081B46EB02F7B1B8EA423F3A5995A413D5B4C59516BE1916DAF51D022153388E87785B7B7E5178DDF1ABF0020D6FFFA0B57CF245FE585CE20D3F3EAB8BD555EEB2E5CD076747415EC876061D3500365C5CDF379AB7280B5E1850492FC45E91DFA0ED9610719F6D21E38B8221E6CA9617D6051EF61A9B615BA1E".Length);
-            try
-            {
-                int NumberChars = hex.Length;
-                bytes = new byte[NumberChars / 2];
-                for (int i = 0; i < NumberChars; i += 2)
-                {
-                    bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-                    Console.WriteLine($"Byte written: {bytes[i / 2]}");
-                }
-                
-                return bytes;
-            }
             catch (Exception ex)
             {
-                Console.WriteLine("StringToByteArray error: " + ex.Message);
+                Console.WriteLine("compute aes: " + ex.Message);
                 return null;
             }
         }
@@ -115,5 +91,55 @@ namespace tanuki_the_first
             }
             catch (Exception e) { Console.WriteLine("AES descryption error: " + e.Message); return null; }
         }
+
+        public static string GetHash(byte[] content)
+        {
+            using (SHA256 mySHA256 = SHA256.Create())
+            {
+                try
+                {
+                    byte[] hashValue = mySHA256.ComputeHash(content);
+                    //return ByteArrayToString(hashValue);
+                    StringBuilder sb = new StringBuilder();
+                    foreach (Byte b in hashValue)
+                        sb.Append(b.ToString("x2"));
+                    return sb.ToString();
+                }
+                catch (IOException e)
+                {
+                    Console.WriteLine($"Sha256 Error: {e.Message}");
+                    return null;
+                }
+            }
+        }
+        private static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+                hex.AppendFormat("{0:x2}", b);
+            return hex.ToString();
+        }
+
+        private static byte[] StringToByteArray(String hex)
+        {
+            byte[] bytes;
+            try
+            {
+                int NumberChars = hex.Length;
+                bytes = new byte[NumberChars / 2];
+                for (int i = 0; i < NumberChars; i += 2)
+                {
+                    bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+                }
+
+                return bytes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("StringToByteArray error: " + ex.Message);
+                return null;
+            }
+        }
     }
+
 }
