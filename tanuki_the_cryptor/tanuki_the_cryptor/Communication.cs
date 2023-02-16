@@ -22,7 +22,7 @@ namespace tanuki_the_cryptor
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
             }
-            catch (Exception ex){ throw; }
+            catch (Exception ex) { throw; }
         }
 
         public void SendMessage(byte[] payload)
@@ -35,23 +35,32 @@ namespace tanuki_the_cryptor
 
         }
 
-        public (byte[], int) RecvMessage(int byte_to_read)
+        public byte[] RecvMessage(int byte_to_read)
         {
             try
             {
                 byte[] recievedMessage = new byte[byte_to_read];
                 int bytesRead = stream.Read(recievedMessage, 0, byte_to_read);
 
-                return (recievedMessage, bytesRead);
+                Console.WriteLine("Bytes recv: " + bytesRead);
+                return TruncateMessage(recievedMessage, bytesRead);
             }
             catch (Exception ex) { throw; }
 
         }
 
+        private byte[] TruncateMessage(byte[] fullArray, int bytesRead)
+        {
+            byte[] truncatedArray = new byte[bytesRead];
+            Array.Copy(fullArray, truncatedArray, bytesRead);
+
+            return truncatedArray;
+        }
+
         public void Close()
         {
-            if(stream != null) stream.Close();
-            if(client != null) client.Close();  
+            if (stream != null) stream.Close();
+            if (client != null) client.Close();
         }
     }
 }
