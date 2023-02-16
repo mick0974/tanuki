@@ -55,7 +55,7 @@ namespace tanuki_the_dropper
             catch (Exception ex)
             {
                 Console.WriteLine("compute aes: " + ex.Message);
-                return null;
+                throw;
             }
         }
 
@@ -71,7 +71,7 @@ namespace tanuki_the_dropper
                     aesAlg.Key = key;
                     aesAlg.IV = iv;
                     aesAlg.Mode = CipherMode.CBC;
-                    aesAlg.Padding = PaddingMode.None;
+                    aesAlg.Padding = PaddingMode.PKCS7;
 
                     ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
                     using (MemoryStream msDecrypt = new MemoryStream(content))
@@ -89,7 +89,7 @@ namespace tanuki_the_dropper
 
                 return plaintext;
             }
-            catch (Exception e) { Console.WriteLine("AES descryption error: " + e.Message); return null; }
+            catch (Exception e) { Console.WriteLine("AES descryption error: " + e.Message); throw; }
         }
 
         public static string GetHash(byte[] content)
@@ -108,16 +108,9 @@ namespace tanuki_the_dropper
                 catch (IOException e)
                 {
                     Console.WriteLine($"Sha256 Error: {e.Message}");
-                    return null;
+                    throw;
                 }
             }
-        }
-        private static string ByteArrayToString(byte[] ba)
-        {
-            StringBuilder hex = new StringBuilder(ba.Length * 2);
-            foreach (byte b in ba)
-                hex.AppendFormat("{0:x2}", b);
-            return hex.ToString();
         }
 
         private static byte[] StringToByteArray(String hex)
@@ -137,7 +130,7 @@ namespace tanuki_the_dropper
             catch (Exception ex)
             {
                 Console.WriteLine("StringToByteArray error: " + ex.Message);
-                return null;
+                throw;
             }
         }
     }

