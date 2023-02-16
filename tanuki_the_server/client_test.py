@@ -1,12 +1,11 @@
 import hashlib
 import json
-import socket
 import random
+import socket
 
-from cryptography.hazmat.primitives import hashes
-from pbkdf2 import pbkdf2
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+from pbkdf2 import pbkdf2
 from tanuki_the_server.server import unpad_data
 
 HOST = "127.0.0.1"
