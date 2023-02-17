@@ -8,7 +8,6 @@ namespace tanuki_the_dropper
         {
             var proc = new Process();
             proc.StartInfo.FileName = fileName;
-            //proc.StartInfo.Arguments = "-v -s -a";
 
             proc.Start();
             proc.WaitForExit();
