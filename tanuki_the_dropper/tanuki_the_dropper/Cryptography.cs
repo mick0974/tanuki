@@ -19,9 +19,7 @@ namespace tanuki_the_dropper
                 rand.NextBytes(x_bytes);
                 x_bytes[x_bytes.Length - 1] &= (byte)0x7F; //force sign bit to positive
                 x = new BigInteger(x_bytes);
-                Console.WriteLine("x computed: " + x);
             } while (x.IsOne || x.IsZero || BigInteger.Compare(x, BigInteger.Subtract(prime, BigInteger.One)) > 0);
-            Console.WriteLine("x computed: " + x);
 
             BigInteger gx = BigInteger.ModPow(generator, x, prime);
             BigInteger key = BigInteger.ModPow(gx_server, x, prime);
@@ -54,7 +52,7 @@ namespace tanuki_the_dropper
             }
             catch (Exception ex)
             {
-                Console.WriteLine("compute aes: " + ex.Message);
+                Utility.ConsoleLog($"Error generating AES key: {ex.Message}");
                 throw;
             }
         }
@@ -89,7 +87,7 @@ namespace tanuki_the_dropper
 
                 return plaintext;
             }
-            catch (Exception e) { Console.WriteLine("AES descryption error: " + e.Message); throw; }
+            catch (Exception e) { Utility.ConsoleLog($"AES descryption error: {e.Message}"); throw; }
         }
 
         public static string GetHash(byte[] content)
@@ -99,7 +97,7 @@ namespace tanuki_the_dropper
                 try
                 {
                     byte[] hashValue = mySHA256.ComputeHash(content);
-                    //return ByteArrayToString(hashValue);
+
                     StringBuilder sb = new StringBuilder();
                     foreach (Byte b in hashValue)
                         sb.Append(b.ToString("x2"));
@@ -107,7 +105,7 @@ namespace tanuki_the_dropper
                 }
                 catch (IOException e)
                 {
-                    Console.WriteLine($"Sha256 Error: {e.Message}");
+                    Utility.ConsoleLog($"Sha256 Error: {e.Message}");
                     throw;
                 }
             }
@@ -129,7 +127,7 @@ namespace tanuki_the_dropper
             }
             catch (Exception ex)
             {
-                Console.WriteLine("StringToByteArray error: " + ex.Message);
+                Utility.ConsoleLog($"StringToByteArray error: {ex.Message}");
                 throw;
             }
         }

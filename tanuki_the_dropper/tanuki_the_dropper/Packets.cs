@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Text;
 using System.Text.Json;
+using tanuki_the_dropper;
 
 namespace Packets
 {
@@ -13,7 +14,6 @@ namespace Packets
             Packets.Request.NewRequest newRequest = new Packets.Request.NewRequest() { Operation = operation };
             string newRequest_json = JsonSerializer.Serialize<Packets.Request.NewRequest>(newRequest);
             byte[] newRequest_bytes = Encoding.UTF8.GetBytes(newRequest_json.ToString());
-            Console.WriteLine("JSON: " + newRequest_json);
 
             return newRequest_bytes;
         }
@@ -23,7 +23,7 @@ namespace Packets
             string serverHalf = Encoding.UTF8.GetString(serverHalf_byte, 0, serverHalf_byte.Length);
             serverHalf = serverHalf.Replace("'", "\"");
             Packets.Reply.ServerKeyParameters response = JsonSerializer.Deserialize<Packets.Reply.ServerKeyParameters>(serverHalf);
-            Console.WriteLine("Received: " + serverHalf);
+            Utility.ConsoleLog($"Received message: {serverHalf}");
 
             return (response.Prime, response.Generator, response.Gx_server);
         }
@@ -43,7 +43,7 @@ namespace Packets
             Console.WriteLine("Received: " + info);
             info = info.Replace("'", "\"");
             Packets.Reply.ExeInfo response = JsonSerializer.Deserialize<Packets.Reply.ExeInfo>(info);
-            
+            Utility.ConsoleLog($"Received message: {info}");
 
             return (response.Hash, response.DataLength);
         }

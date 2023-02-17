@@ -23,7 +23,7 @@ namespace tanuki_the_dropper
                 client = new TcpClient(server, port);
                 stream = client.GetStream();
             }
-            catch (Exception ex) { Console.WriteLine("Error opening connection: " + ex.Message); throw;}
+            catch (Exception ex) { throw; }
         }
 
         public void SendMessage(byte[] payload)
@@ -32,7 +32,7 @@ namespace tanuki_the_dropper
             {
                 stream.Write(payload, 0, payload.Length);
             }
-            catch (Exception ex) { Console.WriteLine("Error sendig message: " + ex.Message); throw; }
+            catch (Exception ex) { throw; }
 
         }
 
@@ -46,7 +46,7 @@ namespace tanuki_the_dropper
 
                 return TruncateMessage(recievedMessage, bytesRead);
             }
-            catch (Exception ex) { return null; }
+            catch (Exception ex) { throw; }
 
         }
 
@@ -67,7 +67,7 @@ namespace tanuki_the_dropper
 
                 return (recievedMessage, readSoFar);
             }
-            catch (Exception ex) { Console.WriteLine("Error sendig or recieving message: " + ex.Message); throw; }
+            catch (Exception ex) { throw; }
 
         }
 
