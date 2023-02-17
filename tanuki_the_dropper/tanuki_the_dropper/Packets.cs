@@ -40,7 +40,6 @@ namespace Packets
         public static (string, int) GetExeInfo(byte[] info_bytes)
         {
             string info = Encoding.UTF8.GetString(info_bytes, 0, info_bytes.Length);
-            Console.WriteLine("Received: " + info);
             info = info.Replace("'", "\"");
             Packets.Reply.ExeInfo response = JsonSerializer.Deserialize<Packets.Reply.ExeInfo>(info);
             Utility.ConsoleLog($"Received message: {info}");

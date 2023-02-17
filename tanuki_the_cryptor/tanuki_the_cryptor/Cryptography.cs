@@ -22,7 +22,7 @@ namespace tanuki_the_cryptor
                 }
                 return encryptedData;
             }
-            catch (CryptographicException e) { throw; }
+            catch (CryptographicException ex) { throw; }
         }
 
         public static byte[] RSADecrypt(byte[] payload)
@@ -42,7 +42,7 @@ namespace tanuki_the_cryptor
                 }
                 return encryptedData;
             }
-            catch (CryptographicException e) { throw; }
+            catch (CryptographicException ex) { throw; }
         }
 
         static public byte[] AESEncrypt(byte[] content, byte[] key, byte[] iv)
@@ -72,7 +72,7 @@ namespace tanuki_the_cryptor
                 }
                 return encrypted;
             }
-            catch (Exception e) { throw; }
+            catch (Exception ex) { throw; }
         }
 
         static public byte[] AESDecrypt(byte[] content, byte[] key, byte[] iv)
@@ -103,7 +103,7 @@ namespace tanuki_the_cryptor
 
                 return plaintext;
             }
-            catch (Exception e) { throw; }
+            catch (Exception ex) { throw; }
         }
 
         public static byte[] GetHash(byte[] content)
@@ -114,7 +114,7 @@ namespace tanuki_the_cryptor
                 {
                     return mySHA256.ComputeHash(content);
                 }
-                catch (IOException e)
+                catch (IOException ex)
                 {
                     throw;
                 }
