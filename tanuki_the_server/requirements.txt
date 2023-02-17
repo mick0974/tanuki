@@ -10,3 +10,4 @@ rsa==4.9
 setuptools==58.1.0
 sympy==1.11.1
 tqdm==4.64.1
+pymysql==10.0.2
