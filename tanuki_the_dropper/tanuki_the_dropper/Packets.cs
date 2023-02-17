@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Text;
 using System.Text.Json;
+using tanuki_the_dropper;
 
 namespace Packets
 {
@@ -12,18 +13,17 @@ namespace Packets
         {
             Packets.Request.NewRequest newRequest = new Packets.Request.NewRequest() { Operation = operation };
             string newRequest_json = JsonSerializer.Serialize<Packets.Request.NewRequest>(newRequest);
-            byte[] newRequest_bytes = Encoding.ASCII.GetBytes(newRequest_json.ToString());
-            Console.WriteLine("JSON: " + newRequest_json);
+            byte[] newRequest_bytes = Encoding.UTF8.GetBytes(newRequest_json.ToString());
 
             return newRequest_bytes;
         }
 
         public static (string, string, string) GetServerKeyParameters(byte[] serverHalf_byte)
         {
-            string serverHalf = Encoding.ASCII.GetString(serverHalf_byte, 0, serverHalf_byte.Length);
+            string serverHalf = Encoding.UTF8.GetString(serverHalf_byte, 0, serverHalf_byte.Length);
             serverHalf = serverHalf.Replace("'", "\"");
             Packets.Reply.ServerKeyParameters response = JsonSerializer.Deserialize<Packets.Reply.ServerKeyParameters>(serverHalf);
-            Console.WriteLine("Received: " + serverHalf);
+            Utility.ConsoleLog($"Received message: {serverHalf}");
 
             return (response.Prime, response.Generator, response.Gx_server);
         }
@@ -32,17 +32,18 @@ namespace Packets
         {
             Packets.Request.ClientParameters parameters = new Packets.Request.ClientParameters() { Operation = operation, Gx_client = gx.ToString() };
             string parameters_Json = JsonSerializer.Serialize<Packets.Request.ClientParameters>(parameters);
-            byte[] parameters_bytes = Encoding.ASCII.GetBytes(parameters_Json.ToString());
+            byte[] parameters_bytes = Encoding.UTF8.GetBytes(parameters_Json.ToString());
 
             return parameters_bytes;
         }
 
         public static (string, int) GetExeInfo(byte[] info_bytes)
         {
-            string info = Encoding.ASCII.GetString(info_bytes, 0, info_bytes.Length);
+            string info = Encoding.UTF8.GetString(info_bytes, 0, info_bytes.Length);
+            Console.WriteLine("Received: " + info);
             info = info.Replace("'", "\"");
             Packets.Reply.ExeInfo response = JsonSerializer.Deserialize<Packets.Reply.ExeInfo>(info);
-            Console.WriteLine("Received: " + info);
+            Utility.ConsoleLog($"Received message: {info}");
 
             return (response.Hash, response.DataLength);
         }
