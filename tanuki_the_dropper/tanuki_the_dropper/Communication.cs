@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 
 namespace tanuki_the_dropper
 {
@@ -80,8 +79,8 @@ namespace tanuki_the_dropper
 
         public void Close()
         {
-            if(stream != null) stream.Close();
-            if(client != null) client.Close();  
+            if (stream != null) stream.Close();
+            if (client != null) client.Close();
         }
     }
 }

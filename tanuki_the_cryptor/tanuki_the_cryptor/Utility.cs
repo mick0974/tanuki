@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace tanuki_the_cryptor
+﻿namespace tanuki_the_cryptor
 {
     static public class Utility
     {

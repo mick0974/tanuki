@@ -1,6 +1,4 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.IO;
 
 namespace tanuki_the_dropper
 {
