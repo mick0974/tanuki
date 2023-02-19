@@ -14,5 +14,5 @@ Oltre al malware dropper è stato implementato un ransomware di prova che viene 
 - **tanuki_the_cryptor**: contiene i file sorgenti di tanuki_the_cryptor, ransomware scaricato sulla macchina della vittima da tanuki_the_dropper;
 - **tanuki_the_dropper**: contiene i file sorgenti di tanuki_the_dropper, il malware dropper da sviluppare secondo le specifiche del progetto;
 - **tanuki_the_server**: contiene i sorgenti dei due server C2 (server_dropper, server_malware) con cui tanuki_the_dropper e tanuki_the_cryptor comunicano e l'eseguibile compilato di tanuki_the_cryptor compresso in un archivio zip, così che possa essere servito da server_dropper;
-- **DesktopChanger.zip**: contiene l'eseguibile compilato di DesktopChanger con embeddati al sui interno l'immagine con cui cambiare lo sfondo del desktop e l'eseguibile compilato di tanuki_the_dropper.
-- **Report.pdf**: report contenente un'analisi accurata dei malware sviluppati.
+- **DesktopChanger.zip**: contiene l'eseguibile compilato di DesktopChanger con embeddati al suo interno l'immagine con cui cambiare lo sfondo del desktop e l'eseguibile compilato di tanuki_the_dropper.
+- **Report_progetto.pdf**: report contenente un'analisi accurata dei malware sviluppati.
